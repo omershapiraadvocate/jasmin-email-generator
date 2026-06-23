@@ -30,11 +30,7 @@ export default function Home() {
       .eq("used", false);
 
     if (!data || data.length === 0) {
-      await supabase
-        .from("templates")
-        .update({ used: false })
-        .eq("gender", finalGender);
-
+      await supabase.from("templates").update({ used: false });
       const res = await supabase
         .from("templates")
         .select("*")
@@ -48,24 +44,45 @@ export default function Home() {
 
     const pick = data[Math.floor(Math.random() * data.length)];
 
-    await supabase
-      .from("templates")
-      .update({ used: true })
-      .eq("id", pick.id);
+    await supabase.from("templates").update({ used: true }).eq("id", pick.id);
 
-    const safeName = name || "";
-    const safeCity = city || "";
-
-    let text = pick.text;
-
-    // 🔥 תיקון מלא לכל וריאציות
-    text = text
-      .split("{name}").join(safeName)
-      .split("name").join(safeName)
-      .split("{city}").join(safeCity)
-      .split("city").join(safeCity);
+    let text = pick.text
+      .split("{name}").join(name || "")
+      .split("name").join(name || "")
+      .split("{city}").join(city || "")
+      .split("city").join(city || "");
 
     setResult(text);
+  }
+
+  async function sendEmail() {
+    let { data: subjects } = await supabase
+      .from("subjects")
+      .select("*")
+      .eq("used", false);
+
+    if (!subjects || subjects.length === 0) {
+      await supabase.from("subjects").update({ used: false });
+
+      const res = await supabase
+        .from("subjects")
+        .select("*")
+        .eq("used", false);
+
+      subjects = res.data;
+    }
+
+    if (!subjects || subjects.length === 0) return;
+
+    const pick = subjects[Math.floor(Math.random() * subjects.length)];
+
+    await supabase.from("subjects").update({ used: true }).eq("id", pick.id);
+
+    const subject = encodeURIComponent(pick.text);
+    const body = encodeURIComponent(result || "");
+
+    window.location.href =
+      `mailto:${email}?subject=${subject}&body=${body}`;
   }
 
   function loginAdmin() {
@@ -76,33 +93,24 @@ export default function Home() {
     }
   }
 
-  function sendEmail() {
-    const subject = encodeURIComponent("פנייה בנושא בעלי חיים בישראל");
-    const body = encodeURIComponent(result || "");
-
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  }
-
   return (
     <div
       dir="rtl"
       style={{
         minHeight: "100vh",
         padding: 30,
-        background: "linear-gradient(135deg, #0b2a18, #1c6b3a)",
+        background: "linear-gradient(135deg,#0b2a18,#1c6b3a)",
         color: "white",
         fontFamily: "Arial",
         textAlign: "right",
       }}
     >
-      <h1 style={{ fontSize: 30 }}>
+      <h1>
         קול 2026 לבעלי החיים - מחולל מיילים ליאיר לפיד
       </h1>
 
-      <p style={{ maxWidth: 850, marginBottom: 25, lineHeight: 1.6 }}>
-        יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה.
-        על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים
-        את יסמין פרידמן במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו.
+      <p style={{ maxWidth: 900, lineHeight: 1.6 }}>
+        יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה. על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים את יסמין פרידמן במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו. באתר זה תוכלו לקבל נוסח למייל שתוכלו לשלוח ישירות ליאיר לפיד דרך הכפתור ״שלח מייל״. תודה ובהצלחה! :)
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 320 }}>
@@ -119,46 +127,22 @@ export default function Home() {
       </div>
 
       {result && (
-        <div
-          style={{
-            marginTop: 30,
-            padding: 18,
-            background: "rgba(255,255,255,0.12)",
-            borderRadius: 12,
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <div style={{ marginTop: 20, padding: 15, background: "rgba(255,255,255,0.1)" }}>
           {result}
 
-          <div style={{ marginTop: 15 }}>
-            <button onClick={sendEmail}>
-              שלח מייל ליאיר לפיד
-            </button>
-
-            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
-              אם הכפתור לא פותח מייל, שלחו ידנית ל {email}
-            </div>
+          <div>
+            <button onClick={sendEmail}>שלח מייל</button>
           </div>
         </div>
       )}
 
-      <div
-        style={{
-          position: "fixed",
-          bottom: 15,
-          right: 15,
-          background: "rgba(0,0,0,0.25)",
-          padding: 10,
-          borderRadius: 10,
-        }}
-      >
+      <div style={{ position: "fixed", bottom: 15, right: 15 }}>
         <input
           placeholder="סיסמה"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ width: 130 }}
         />
-        <button onClick={loginAdmin}>כניסת אדמין</button>
+        <button onClick={loginAdmin}>אדמין</button>
       </div>
     </div>
   );

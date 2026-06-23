@@ -10,31 +10,49 @@ type Template = {
   used: boolean;
 };
 
-export default function AdminPage() {
+type Subject = {
+  id: number;
+  text: string;
+  used: boolean;
+};
+
+export default function Admin() {
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [text, setText] = useState("");
-  const [gender, setGender] = useState("male");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+
+  const [newTemplate, setNewTemplate] = useState("");
+  const [newSubject, setNewSubject] = useState("");
+
+  const [editTemplateId, setEditTemplateId] = useState<number | null>(null);
+  const [editTemplateText, setEditTemplateText] = useState("");
+
+  const [editSubjectId, setEditSubjectId] = useState<number | null>(null);
+  const [editSubjectText, setEditSubjectText] = useState("");
 
   async function load() {
-    const { data } = await supabase.from("templates").select("*").order("id");
-    setTemplates(data || []);
+    const t = await supabase.from("templates").select("*").order("id");
+    const s = await supabase.from("subjects").select("*").order("id");
+
+    setTemplates(t.data || []);
+    setSubjects(s.data || []);
   }
 
   useEffect(() => {
     load();
   }, []);
 
+  // ───────── Templates ─────────
+
   async function addTemplate() {
-    if (!text) return;
+    if (!newTemplate) return;
 
     await supabase.from("templates").insert({
-      text,
-      gender,
+      text: newTemplate,
+      gender: "male",
       used: false,
     });
 
-    setText("");
+    setNewTemplate("");
     load();
   }
 
@@ -43,25 +61,58 @@ export default function AdminPage() {
     load();
   }
 
-  async function startEdit(t: Template) {
-    setEditingId(t.id);
-    setText(t.text);
-    setGender(t.gender);
+  function startEditTemplate(t: Template) {
+    setEditTemplateId(t.id);
+    setEditTemplateText(t.text);
   }
 
-  async function saveEdit() {
-    if (!editingId) return;
+  async function saveTemplateEdit() {
+    if (!editTemplateId) return;
 
     await supabase
       .from("templates")
-      .update({
-        text,
-        gender,
-      })
-      .eq("id", editingId);
+      .update({ text: editTemplateText })
+      .eq("id", editTemplateId);
 
-    setEditingId(null);
-    setText("");
+    setEditTemplateId(null);
+    setEditTemplateText("");
+    load();
+  }
+
+  // ───────── Subjects ─────────
+
+  async function addSubject() {
+    if (!newSubject) return;
+
+    await supabase.from("subjects").insert({
+      text: newSubject,
+      used: false,
+    });
+
+    setNewSubject("");
+    load();
+  }
+
+  async function deleteSubject(id: number) {
+    await supabase.from("subjects").delete().eq("id", id);
+    load();
+  }
+
+  function startEditSubject(s: Subject) {
+    setEditSubjectId(s.id);
+    setEditSubjectText(s.text);
+  }
+
+  async function saveSubjectEdit() {
+    if (!editSubjectId) return;
+
+    await supabase
+      .from("subjects")
+      .update({ text: editSubjectText })
+      .eq("id", editSubjectId);
+
+    setEditSubjectId(null);
+    setEditSubjectText("");
     load();
   }
 
@@ -72,63 +123,93 @@ export default function AdminPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
         padding: 30,
-        background: "#0f2e1c",
+        background: "#0b2a18",
         color: "white",
+        minHeight: "100vh",
         fontFamily: "Arial",
       }}
     >
       <h1>פאנל אדמין</h1>
 
-      <button onClick={logout} style={{ marginBottom: 20 }}>
-        חזרה לאתר
-      </button>
+      <button onClick={logout}>חזרה לאתר</button>
 
-      {/* הוספה / עריכה */}
-      <div style={{ marginBottom: 20 }}>
-        <textarea
-          placeholder="ניסוח..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          style={{ width: "100%", height: 100 }}
-        />
+      {/* ───── Templates ───── */}
+      <h2 style={{ marginTop: 20 }}>ניסוחים</h2>
 
-        <select value={gender} onChange={(e) => setGender(e.target.value)}>
-          <option value="male">גבר</option>
-          <option value="female">אישה</option>
-        </select>
+      <input
+        value={newTemplate}
+        onChange={(e) => setNewTemplate(e.target.value)}
+        placeholder="הוסף ניסוח חדש"
+      />
+      <button onClick={addTemplate}>הוסף</button>
 
-        {editingId ? (
-          <button onClick={saveEdit}>שמור שינוי</button>
-        ) : (
-          <button onClick={addTemplate}>הוסף ניסוח</button>
-        )}
-      </div>
-
-      {/* רשימה */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ marginTop: 10 }}>
         {templates.map((t) => (
           <div
             key={t.id}
             style={{
               padding: 10,
+              marginBottom: 8,
               background: "rgba(255,255,255,0.1)",
-              borderRadius: 8,
+              borderRadius: 6,
             }}
           >
-            <div>{t.text}</div>
+            {editTemplateId === t.id ? (
+              <>
+                <input
+                  value={editTemplateText}
+                  onChange={(e) => setEditTemplateText(e.target.value)}
+                />
+                <button onClick={saveTemplateEdit}>שמור</button>
+              </>
+            ) : (
+              <>
+                <div>{t.text}</div>
+                <button onClick={() => startEditTemplate(t)}>ערוך</button>
+                <button onClick={() => deleteTemplate(t.id)}>מחק</button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
 
-            <small>
-              {t.gender} | {t.used ? "בשימוש" : "פנוי"}
-            </small>
+      {/* ───── Subjects ───── */}
+      <h2 style={{ marginTop: 30 }}>נושאים</h2>
 
-            <div style={{ marginTop: 5 }}>
-              <button onClick={() => startEdit(t)}>ערוך</button>
-              <button onClick={() => deleteTemplate(t.id)} style={{ marginLeft: 10 }}>
-                מחק
-              </button>
-            </div>
+      <input
+        value={newSubject}
+        onChange={(e) => setNewSubject(e.target.value)}
+        placeholder="הוסף נושא חדש"
+      />
+      <button onClick={addSubject}>הוסף</button>
+
+      <div style={{ marginTop: 10 }}>
+        {subjects.map((s) => (
+          <div
+            key={s.id}
+            style={{
+              padding: 10,
+              marginBottom: 8,
+              background: "rgba(255,255,255,0.1)",
+              borderRadius: 6,
+            }}
+          >
+            {editSubjectId === s.id ? (
+              <>
+                <input
+                  value={editSubjectText}
+                  onChange={(e) => setEditSubjectText(e.target.value)}
+                />
+                <button onClick={saveSubjectEdit}>שמור</button>
+              </>
+            ) : (
+              <>
+                <div>{s.text}</div>
+                <button onClick={() => startEditSubject(s)}>ערוך</button>
+                <button onClick={() => deleteSubject(s.id)}>מחק</button>
+              </>
+            )}
           </div>
         ))}
       </div>

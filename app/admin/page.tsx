@@ -44,10 +44,20 @@ export default function Admin() {
   // ───────── Templates ─────────
 
   async function addTemplate() {
-    if (!newTemplate) return;
+    if (!newTemplate.trim()) return;
+
+    const { data: existing } = await supabase
+      .from("templates")
+      .select("*")
+      .eq("text", newTemplate.trim());
+
+    if (existing && existing.length > 0) {
+      alert("הניסוח כבר קיים");
+      return;
+    }
 
     await supabase.from("templates").insert({
-      text: newTemplate,
+      text: newTemplate.trim(),
       gender: "male",
       used: false,
     });
@@ -82,10 +92,20 @@ export default function Admin() {
   // ───────── Subjects ─────────
 
   async function addSubject() {
-    if (!newSubject) return;
+    if (!newSubject.trim()) return;
+
+    const { data: existing } = await supabase
+      .from("subjects")
+      .select("*")
+      .eq("text", newSubject.trim());
+
+    if (existing && existing.length > 0) {
+      alert("הנושא כבר קיים");
+      return;
+    }
 
     await supabase.from("subjects").insert({
-      text: newSubject,
+      text: newSubject.trim(),
       used: false,
     });
 
@@ -128,6 +148,7 @@ export default function Admin() {
         color: "white",
         minHeight: "100vh",
         fontFamily: "Arial",
+        textAlign: "right",
       }}
     >
       <h1>פאנל אדמין</h1>

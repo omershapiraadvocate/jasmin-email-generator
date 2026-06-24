@@ -12,7 +12,7 @@ export default function Home() {
   const [result, setResult] = useState("");
   const [password, setPassword] = useState("");
 
-  const email = "yairlapid@knesset.gov.il";
+  const email = "ylapid@knesset.gov.il";
 
   function resolveGender(g: Gender): "male" | "female" {
     if (g === "male") return "male";
@@ -97,7 +97,11 @@ export default function Home() {
 
       <h1>קול 2026 לבעלי החיים - מחולל מיילים ליאיר לפיד</h1>
 
-      {/* 🟢 תת כותרת יחידה בלבד */}
+      <p style={{ maxWidth: 900, lineHeight: 1.6 }}>
+        יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה. על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים אותה במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו. באתר זה תוכלו לקבל נוסח למייל שתוכלו לשלוח ישירות ליאיר לפיד דרך הכפתור ״שלח מייל״. תודה ובהצלחה! :)
+      </p>
+
+      {/* תת כותרת */}
       <p style={{ maxWidth: 900, lineHeight: 1.6 }}>
         יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה. על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים את יסמין פרידמן במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו. באתר זה תוכלו לקבל נוסח למייל שתוכלו לשלוח ישירות ליאיר לפיד דרך הכפתור ״שלח מייל״. תודה ובהצלחה! :)
       </p>
@@ -118,8 +122,14 @@ export default function Home() {
       {result && (
         <div style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
           {result}
+
           <br />
+
           <button onClick={sendEmail}>שלח מייל</button>
+
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            אם הכפתור "שלח מייל" לא עובד לך, בבקשה להעתיק את התוכן ולשלוח ידנית ל ylapid@knesset.gov.il
+          </div>
         </div>
       )}
 

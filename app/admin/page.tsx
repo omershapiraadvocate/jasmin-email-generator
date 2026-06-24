@@ -3,25 +3,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type Template = {
-  id: number;
-  text: string;
-  gender: string;
-  used: boolean;
-};
-
-type Subject = {
-  id: number;
-  text: string;
-  used: boolean;
-};
-
 export default function Admin() {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
 
-  const [newTemplate, setNewTemplate] = useState("");
-  const [newSubject, setNewSubject] = useState("");
+  const [bulkTemplates, setBulkTemplates] = useState("");
+  const [bulkSubjects, setBulkSubjects] = useState("");
 
   const [editTemplateId, setEditTemplateId] = useState<number | null>(null);
   const [editTemplateText, setEditTemplateText] = useState("");
@@ -41,199 +28,232 @@ export default function Admin() {
     load();
   }, []);
 
-  // ───────── Templates ─────────
+  // 🧠 NORMALIZER (חשוב מאוד לבעיות שלך)
+  const normalize = (s: string) =>
+    s
+      .replace(/\u00A0/g, " ") // NBSP fix
+      .replace(/\r/g, "")
+      .trim();
 
-  async function addTemplate() {
-    if (!newTemplate.trim()) return;
+  const parseTemplate = (raw: string) => {
+    let text = normalize(raw);
 
-    const { data: existing } = await supabase
-      .from("templates")
-      .select("*")
-      .eq("text", newTemplate.trim());
+    // 🟢 remove leading numbers (robust)
+    text = text.replace(/^\s*\d+\s*[\.:)]?\s*/g, "");
 
-    if (existing && existing.length > 0) {
-      alert("הניסוח כבר קיים");
-      return;
+    let gender: "male" | "female" = "male";
+
+    // 🟢 gender tag only (NOT part of content)
+    if (/^\s*גבר\s*:/i.test(text)) {
+      gender = "male";
+      text = text.replace(/^\s*גבר\s*:\s*/i, "");
+    } else if (/^\s*אישה\s*:/i.test(text)) {
+      gender = "female";
+      text = text.replace(/^\s*אישה\s*:\s*/i, "");
     }
 
-    await supabase.from("templates").insert({
-      text: newTemplate.trim(),
-      gender: "male",
-      used: false,
+    return { text, gender };
+  };
+
+  // ───── BULK TEMPLATES ─────
+  async function bulkAddTemplates() {
+    const items = bulkTemplates
+      .split("###")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const rows = items.map(raw => {
+      const { text, gender } = parseTemplate(raw);
+
+      return {
+        text,
+        gender,
+        used: false
+      };
     });
 
-    setNewTemplate("");
+    await supabase.from("templates").insert(rows);
+    setBulkTemplates("");
     load();
   }
 
-  async function deleteTemplate(id: number) {
-    await supabase.from("templates").delete().eq("id", id);
+  // ───── BULK SUBJECTS ─────
+  async function bulkAddSubjects() {
+    const items = bulkSubjects
+      .split("\n")
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s =>
+        s
+          .replace(/\u00A0/g, " ")
+          .replace(/^\s*\d+\s*[\.:)]?\s*/g, "")
+      );
+
+    await supabase.from("subjects").insert(
+      items.map(text => ({
+        text,
+        used: false
+      }))
+    );
+
+    setBulkSubjects("");
     load();
   }
 
-  function startEditTemplate(t: Template) {
-    setEditTemplateId(t.id);
-    setEditTemplateText(t.text);
-  }
+  // ───── DELETE ALL ─────
+  async function deleteAllTemplates() {
+    const ok = confirm("למחוק את כל הניסוחים?");
+    if (!ok) return;
 
-  async function saveTemplateEdit() {
-    if (!editTemplateId) return;
-
-    await supabase
-      .from("templates")
-      .update({ text: editTemplateText })
-      .eq("id", editTemplateId);
-
-    setEditTemplateId(null);
-    setEditTemplateText("");
+    await supabase.from("templates").delete().neq("id", 0);
     load();
   }
 
-  // ───────── Subjects ─────────
+  async function deleteAllSubjects() {
+    const ok = confirm("למחוק את כל הנושאים?");
+    if (!ok) return;
 
-  async function addSubject() {
-    if (!newSubject.trim()) return;
-
-    const { data: existing } = await supabase
-      .from("subjects")
-      .select("*")
-      .eq("text", newSubject.trim());
-
-    if (existing && existing.length > 0) {
-      alert("הנושא כבר קיים");
-      return;
-    }
-
-    await supabase.from("subjects").insert({
-      text: newSubject.trim(),
-      used: false,
-    });
-
-    setNewSubject("");
+    await supabase.from("subjects").delete().neq("id", 0);
     load();
   }
 
-  async function deleteSubject(id: number) {
-    await supabase.from("subjects").delete().eq("id", id);
-    load();
-  }
-
-  function startEditSubject(s: Subject) {
-    setEditSubjectId(s.id);
-    setEditSubjectText(s.text);
-  }
-
-  async function saveSubjectEdit() {
-    if (!editSubjectId) return;
-
-    await supabase
-      .from("subjects")
-      .update({ text: editSubjectText })
-      .eq("id", editSubjectId);
-
-    setEditSubjectId(null);
-    setEditSubjectText("");
-    load();
-  }
-
-  function logout() {
-    window.location.href = "/";
-  }
-
+  // ───── UI ─────
   return (
-    <div
-      style={{
-        padding: 30,
-        background: "#0b2a18",
-        color: "white",
-        minHeight: "100vh",
-        fontFamily: "Arial",
-        textAlign: "right",
-      }}
-    >
-      <h1>פאנל אדמין</h1>
+    <div dir="rtl" style={{ padding: 30 }}>
 
-      <button onClick={logout}>חזרה לאתר</button>
+      <h1>אדמין</h1>
 
-      {/* ───── Templates ───── */}
-      <h2 style={{ marginTop: 20 }}>ניסוחים</h2>
+      <button onClick={() => (window.location.href = "/")}>
+        חזרה לאתר
+      </button>
 
-      <input
-        value={newTemplate}
-        onChange={(e) => setNewTemplate(e.target.value)}
-        placeholder="הוסף ניסוח חדש"
+      {/* ───── TEMPLATES ───── */}
+      <h2>ניסוחים</h2>
+
+      <textarea
+        value={bulkTemplates}
+        onChange={(e) => setBulkTemplates(e.target.value)}
+        style={{ width: "100%", height: 120 }}
       />
-      <button onClick={addTemplate}>הוסף</button>
 
-      <div style={{ marginTop: 10 }}>
-        {templates.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              padding: 10,
-              marginBottom: 8,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 6,
-            }}
-          >
-            {editTemplateId === t.id ? (
-              <>
-                <input
-                  value={editTemplateText}
-                  onChange={(e) => setEditTemplateText(e.target.value)}
-                />
-                <button onClick={saveTemplateEdit}>שמור</button>
-              </>
-            ) : (
-              <>
-                <div>{t.text}</div>
-                <button onClick={() => startEditTemplate(t)}>ערוך</button>
-                <button onClick={() => deleteTemplate(t.id)}>מחק</button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+      <button onClick={bulkAddTemplates}>
+        הוסף ניסוחים בבולק
+      </button>
 
-      {/* ───── Subjects ───── */}
-      <h2 style={{ marginTop: 30 }}>נושאים</h2>
+      <button onClick={deleteAllTemplates} style={{ color: "red", marginLeft: 10 }}>
+        מחק הכל ניסוחים
+      </button>
 
-      <input
-        value={newSubject}
-        onChange={(e) => setNewSubject(e.target.value)}
-        placeholder="הוסף נושא חדש"
+      {templates.map(t => (
+        <div key={t.id} style={{ marginTop: 10 }}>
+
+          {editTemplateId === t.id ? (
+            <>
+              <input
+                value={editTemplateText}
+                onChange={(e) => setEditTemplateText(e.target.value)}
+              />
+              <button
+                onClick={async () => {
+                  await supabase
+                    .from("templates")
+                    .update({ text: editTemplateText })
+                    .eq("id", t.id);
+
+                  setEditTemplateId(null);
+                  load();
+                }}
+              >
+                שמור
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ whiteSpace: "pre-wrap" }}>{t.text}</div>
+
+              <button onClick={() => {
+                setEditTemplateId(t.id);
+                setEditTemplateText(t.text);
+              }}>
+                ערוך
+              </button>
+
+              <button
+                onClick={async () => {
+                  await supabase.from("templates").delete().eq("id", t.id);
+                  load();
+                }}
+              >
+                מחק
+              </button>
+            </>
+          )}
+        </div>
+      ))}
+
+      {/* ───── SUBJECTS ───── */}
+      <h2>נושאים</h2>
+
+      <textarea
+        value={bulkSubjects}
+        onChange={(e) => setBulkSubjects(e.target.value)}
+        style={{ width: "100%", height: 120 }}
       />
-      <button onClick={addSubject}>הוסף</button>
 
-      <div style={{ marginTop: 10 }}>
-        {subjects.map((s) => (
-          <div
-            key={s.id}
-            style={{
-              padding: 10,
-              marginBottom: 8,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 6,
-            }}
-          >
-            {editSubjectId === s.id ? (
-              <>
-                <input
-                  value={editSubjectText}
-                  onChange={(e) => setEditSubjectText(e.target.value)}
-                />
-                <button onClick={saveSubjectEdit}>שמור</button>
-              </>
-            ) : (
-              <>
-                <div>{s.text}</div>
-                <button onClick={() => startEditSubject(s)}>ערוך</button>
-                <button onClick={() => deleteSubject(s.id)}>מחק</button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+      <button onClick={bulkAddSubjects}>
+        הוסף נושאים בבולק
+      </button>
+
+      <button onClick={deleteAllSubjects} style={{ color: "red", marginLeft: 10 }}>
+        מחק הכל נושאים
+      </button>
+
+      {subjects.map(s => (
+        <div key={s.id} style={{ marginTop: 10 }}>
+
+          {editSubjectId === s.id ? (
+            <>
+              <input
+                value={editSubjectText}
+                onChange={(e) => setEditSubjectText(e.target.value)}
+              />
+              <button
+                onClick={async () => {
+                  await supabase
+                    .from("subjects")
+                    .update({ text: editSubjectText })
+                    .eq("id", s.id);
+
+                  setEditSubjectId(null);
+                  load();
+                }}
+              >
+                שמור
+              </button>
+            </>
+          ) : (
+            <>
+              <div>{s.text}</div>
+
+              <button onClick={() => {
+                setEditSubjectId(s.id);
+                setEditSubjectText(s.text);
+              }}>
+                ערוך
+              </button>
+
+              <button
+                onClick={async () => {
+                  await supabase.from("subjects").delete().eq("id", s.id);
+                  load();
+                }}
+              >
+                מחק
+              </button>
+            </>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

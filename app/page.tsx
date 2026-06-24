@@ -31,6 +31,7 @@ export default function Home() {
 
     if (!data || data.length === 0) {
       await supabase.from("templates").update({ used: false });
+
       const res = await supabase
         .from("templates")
         .select("*")
@@ -47,10 +48,8 @@ export default function Home() {
     await supabase.from("templates").update({ used: true }).eq("id", pick.id);
 
     let text = pick.text
-      .split("{name}").join(name || "")
-      .split("name").join(name || "")
-      .split("{city}").join(city || "")
-      .split("city").join(city || "");
+      .replace(/\{?name\}?/gi, name || "")
+      .replace(/\{?city\}?/gi, city || "");
 
     setResult(text);
   }
@@ -79,7 +78,7 @@ export default function Home() {
     await supabase.from("subjects").update({ used: true }).eq("id", pick.id);
 
     const subject = encodeURIComponent(pick.text);
-    const body = encodeURIComponent(result || "");
+    const body = encodeURIComponent((result || "").replace(/\n/g, "\r\n"));
 
     window.location.href =
       `mailto:${email}?subject=${subject}&body=${body}`;
@@ -94,21 +93,11 @@ export default function Home() {
   }
 
   return (
-    <div
-      dir="rtl"
-      style={{
-        minHeight: "100vh",
-        padding: 30,
-        background: "linear-gradient(135deg,#0b2a18,#1c6b3a)",
-        color: "white",
-        fontFamily: "Arial",
-        textAlign: "right",
-      }}
-    >
-      <h1>
-        קול 2026 לבעלי החיים - מחולל מיילים ליאיר לפיד
-      </h1>
+    <div dir="rtl" style={{ padding: 30 }}>
 
+      <h1>קול 2026 לבעלי החיים - מחולל מיילים ליאיר לפיד</h1>
+
+      {/* 🟢 תת כותרת יחידה בלבד */}
       <p style={{ maxWidth: 900, lineHeight: 1.6 }}>
         יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה. על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים את יסמין פרידמן במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו. באתר זה תוכלו לקבל נוסח למייל שתוכלו לשלוח ישירות ליאיר לפיד דרך הכפתור ״שלח מייל״. תודה ובהצלחה! :)
       </p>
@@ -127,16 +116,14 @@ export default function Home() {
       </div>
 
       {result && (
-        <div style={{ marginTop: 20, padding: 15, background: "rgba(255,255,255,0.1)" }}>
+        <div style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
           {result}
-
-          <div>
-            <button onClick={sendEmail}>שלח מייל</button>
-          </div>
+          <br />
+          <button onClick={sendEmail}>שלח מייל</button>
         </div>
       )}
 
-      <div style={{ position: "fixed", bottom: 15, right: 15 }}>
+      <div style={{ position: "fixed", bottom: 10, right: 10 }}>
         <input
           placeholder="סיסמה"
           value={password}

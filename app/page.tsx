@@ -92,7 +92,34 @@ export default function Home() {
             <h3 style={{ marginTop: 0 }}>
               מחולל הודעות WhatsApp
             </h3>
+<div
+  style={{
+    background: "rgba(255,255,255,0.12)",
+    borderRadius: 18,
+    padding: 24,
+    border: "1px solid rgba(255,255,255,0.15)",
+  }}
+>
+  <h3 style={{ marginTop: 0 }}>
+    מחולל הודעות WhatsApp ליאיר לפיד
+  </h3>
 
+  <p style={{ lineHeight: 1.7 }}>
+    יצירת הודעות WhatsApp בנושא בעלי חיים ושליחה ישירה ליו"ר יש עתיד.
+  </p>
+
+  <button
+    onClick={() => (window.location.href = "/lapidwhatsapp")}
+    style={{
+      marginTop: 10,
+      padding: "12px 22px",
+      fontSize: 16,
+      cursor: "pointer",
+    }}
+  >
+    כניסה למחולל
+  </button>
+</div>
             <p>
               בקרוב...
             </p>

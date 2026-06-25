@@ -62,24 +62,35 @@ export default function WhatsAppAdmin() {
   }
 
   function parseBulk() {
-    const items = bulk
-      .split("###")
-      .map((t) => t.trim())
-      .filter(Boolean);
+  const items = bulk
+    .split("###")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
-    const parsed = items.map((t) => {
-      const clean = t
-        .replace(/^\d+[\.\:\)]\s*/g, "")
-        .replace(/^גבר:\s*/g, "")
-        .replace(/^אישה:\s*/g, "");
+  const parsed = items.map((t) => {
+    const cleaned = t
+      .replace(/^\d+[\.\:\)]\s*/g, "")
+      .replace(/^גבר:\s*/g, "")
+      .replace(/^אישה:\s*/g, "")
+      .trim();
 
-      let detectedGender = "male";
-      if (t.startsWith("אישה:")) detectedGender = "female";
+    let detectedGender: "male" | "female" = "male";
 
-      return {
-        text: clean,
-        gender: detectedGender,
-        used: false,
+    if (/אישה\s*:/.test(t)) detectedGender = "female";
+    if (/גבר\s*:/.test(t)) detectedGender = "male";
+
+    return {
+      text: cleaned,
+      gender: detectedGender,
+      used: false,
+    };
+  });
+
+  supabase.from("whatsapp_templates").insert(parsed).then(() => {
+    setBulk("");
+    load();
+  });
+}
       };
     });
 

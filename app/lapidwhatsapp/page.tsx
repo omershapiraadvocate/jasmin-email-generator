@@ -62,10 +62,7 @@ export default function WhatsAppGenerator() {
 
     const encoded = encodeURIComponent(result);
 
-    window.open(
-      `https://wa.me/${phone}?text=${encoded}`,
-      "_blank"
-    );
+    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
   }
 
   function loginAdmin() {
@@ -81,8 +78,12 @@ export default function WhatsAppGenerator() {
 
       <h1>מחולל הודעות WhatsApp ליאיר לפיד</h1>
 
-      <p style={{ maxWidth: 900, lineHeight: 1.6 }}>
-        כאן ניתן ליצור הודעות WhatsApp בנושאי בעלי חיים ולשלוח ישירות.
+      <p style={{ lineHeight: 1.8 }}>
+        יסמין סאקס פרידמן היא חברת כנסת מיש עתיד, והיא דמות מרכזית הפועלת למען בעלי חיים בכנסת ובחקיקה. על מנת להבטיח את מקומה בכנסת הבאה, אנחנו צריכיםות להפעיל לחץ ציבורי על יאיר לפיד ולדרוש ממנו לשים את יסמין פרידמן במקום ראלי וגבוה ברשימת הח״כים של המפלגה שלו. באתר זה תוכלו לקבל נוסח להודעת וואטסאפ שתוכלו לשלוח ישירות ליאיר לפיד דרך הכפתור ״פתח ב-WhatsApp״.
+        <br /><br />
+        הכפתור יופיע לאחר שתמלאו את שמכם בטופס ושתלחצו על ״צור הודעה״.
+        <br /><br />
+        תודה ובהצלחה! :)
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 320 }}>
@@ -107,6 +108,11 @@ export default function WhatsAppGenerator() {
           <button onClick={sendWhatsApp}>
             פתח ב-WhatsApp
           </button>
+
+          {/* 🔴 התוספת שביקשת */}
+          <p style={{ marginTop: 10, fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}>
+            אם הכפתור "פתח ב-WhatsApp" לא עובד לך, בבקשה להעתיק את התוכן ולשלוח ידנית ל 0549909901
+          </p>
         </div>
       )}
 
@@ -118,6 +124,7 @@ export default function WhatsAppGenerator() {
         />
         <button onClick={loginAdmin}>אדמין</button>
       </div>
+
     </div>
   );
 }

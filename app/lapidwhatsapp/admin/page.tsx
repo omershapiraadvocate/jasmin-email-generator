@@ -10,7 +10,7 @@ type Template = {
   used: boolean;
 };
 
-export default function WhatsAppAdmin() {
+export default function MailAdmin() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [text, setText] = useState("");
   const [gender, setGender] = useState("male");
@@ -20,7 +20,7 @@ export default function WhatsAppAdmin() {
 
   const load = async () => {
     const { data } = await supabase
-      .from("whatsapp_templates")
+      .from("templates")
       .select("*")
       .order("id", { ascending: true });
 
@@ -34,7 +34,7 @@ export default function WhatsAppAdmin() {
   async function addTemplate() {
     if (!text.trim()) return;
 
-    await supabase.from("whatsapp_templates").insert([
+    await supabase.from("templates").insert([
       {
         text,
         gender,
@@ -47,54 +47,46 @@ export default function WhatsAppAdmin() {
   }
 
   async function deleteTemplate(id: number) {
-    await supabase.from("whatsapp_templates").delete().eq("id", id);
+    await supabase.from("templates").delete().eq("id", id);
     load();
   }
 
   async function resetUsed() {
-    await supabase.from("whatsapp_templates").update({ used: false });
+    await supabase.from("templates").update({ used: false });
     load();
   }
 
   async function clearAll() {
-    await supabase.from("whatsapp_templates").delete().neq("id", 0);
+    await supabase.from("templates").delete().neq("id", 0);
     load();
   }
 
   function parseBulk() {
-  const items = bulk
-    .split("###")
-    .map((t) => t.trim())
-    .filter(Boolean);
+    const items = bulk
+      .split("###")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
-  const parsed = items.map((t) => {
-    const cleaned = t
-      .replace(/^\d+[\.\:\)]\s*/g, "")
-      .replace(/^גבר:\s*/g, "")
-      .replace(/^אישה:\s*/g, "")
-      .trim();
+    const parsed = items.map((t) => {
+      const cleaned = t
+        .replace(/^\d+[\.\:\)]\s*/g, "")
+        .replace(/^גבר:\s*/g, "")
+        .replace(/^אישה:\s*/g, "")
+        .trim();
 
-    let detectedGender: "male" | "female" = "male";
+      let detectedGender: "male" | "female" = "male";
 
-    if (/אישה\s*:/.test(t)) detectedGender = "female";
-    if (/גבר\s*:/.test(t)) detectedGender = "male";
+      if (/אישה\s*:/.test(t)) detectedGender = "female";
+      if (/גבר\s*:/.test(t)) detectedGender = "male";
 
-    return {
-      text: cleaned,
-      gender: detectedGender,
-      used: false,
-    };
-  });
-
-  supabase.from("whatsapp_templates").insert(parsed).then(() => {
-    setBulk("");
-    load();
-  });
-}
+      return {
+        text: cleaned,
+        gender: detectedGender,
+        used: false,
       };
     });
 
-    supabase.from("whatsapp_templates").insert(parsed).then(() => {
+    supabase.from("templates").insert(parsed).then(() => {
       setBulk("");
       load();
     });
@@ -112,7 +104,7 @@ export default function WhatsAppAdmin() {
   if (!loggedIn) {
     return (
       <div style={{ padding: 30 }}>
-        <h2>אדמין וואטסאפ</h2>
+        <h2>אדמין מיילים</h2>
 
         <input
           placeholder="סיסמה"
@@ -140,12 +132,11 @@ export default function WhatsAppAdmin() {
         </button>
       </div>
 
-      <h1>אדמין וואטסאפ - לפיד</h1>
+      <h1>אדמין מיילים - לפיד</h1>
 
       <h2>הוספת ניסוח</h2>
 
       <textarea
-        placeholder="טקסט"
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={4}
@@ -164,7 +155,6 @@ export default function WhatsAppAdmin() {
       <h2>בולק (###)</h2>
 
       <textarea
-        placeholder="הדבק כאן ניסוחים עם ###"
         value={bulk}
         onChange={(e) => setBulk(e.target.value)}
         rows={6}

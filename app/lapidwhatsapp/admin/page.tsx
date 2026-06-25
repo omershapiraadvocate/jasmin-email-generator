@@ -16,6 +16,7 @@ export default function WhatsAppAdmin() {
   const [gender, setGender] = useState("male");
   const [bulk, setBulk] = useState("");
   const [password, setPassword] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -27,8 +28,8 @@ export default function WhatsAppAdmin() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    if (loggedIn) load();
+  }, [loggedIn]);
 
   async function addTemplate() {
     if (!text.trim()) return;
@@ -51,10 +52,7 @@ export default function WhatsAppAdmin() {
   }
 
   async function resetUsed() {
-    await supabase
-      .from("whatsapp_templates")
-      .update({ used: false });
-
+    await supabase.from("whatsapp_templates").update({ used: false });
     load();
   }
 
@@ -93,25 +91,45 @@ export default function WhatsAppAdmin() {
 
   function login() {
     if (password === "99004488") {
+      setLoggedIn(true);
       load();
     } else {
       alert("סיסמה שגויה");
     }
   }
 
+  if (!loggedIn) {
+    return (
+      <div style={{ padding: 30 }}>
+        <h2>אדמין וואטסאפ</h2>
+
+        <input
+          placeholder="סיסמה"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button onClick={login}>כניסה</button>
+
+        <br /><br />
+
+        <button onClick={() => (window.location.href = "/")}>
+          חזרה לאתר הראשי
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div dir="rtl" style={{ padding: 30, fontFamily: "Arial" }}>
 
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={() => (window.location.href = "/")}>
+          ⬅ חזרה לאתר הראשי
+        </button>
+      </div>
+
       <h1>אדמין וואטסאפ - לפיד</h1>
-
-      <input
-        placeholder="סיסמה"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={login}>כניסה</button>
-
-      <hr />
 
       <h2>הוספת ניסוח</h2>
 
@@ -123,10 +141,7 @@ export default function WhatsAppAdmin() {
         style={{ width: "100%" }}
       />
 
-      <select
-        value={gender}
-        onChange={(e) => setGender(e.target.value)}
-      >
+      <select value={gender} onChange={(e) => setGender(e.target.value)}>
         <option value="male">גבר</option>
         <option value="female">אישה</option>
       </select>
@@ -138,7 +153,7 @@ export default function WhatsAppAdmin() {
       <h2>בולק (###)</h2>
 
       <textarea
-        placeholder="הדבק כאן ניסוחים עם ### בין כל אחד"
+        placeholder="הדבק כאן ניסוחים עם ###"
         value={bulk}
         onChange={(e) => setBulk(e.target.value)}
         rows={6}
@@ -158,13 +173,24 @@ export default function WhatsAppAdmin() {
 
       <h2>רשימת ניסוחים</h2>
 
+      {templates.length === 0 && <p>אין ניסוחים עדיין</p>}
+
       {templates.map((t) => (
-        <div key={t.id} style={{ marginBottom: 10 }}>
+        <div
+          key={t.id}
+          style={{
+            marginBottom: 10,
+            padding: 10,
+            border: "1px solid #ccc",
+          }}
+        >
           <b>{t.gender}</b>: {t.text}
 
-          <button onClick={() => deleteTemplate(t.id)}>
-            מחק
-          </button>
+          <div>
+            <button onClick={() => deleteTemplate(t.id)}>
+              מחק
+            </button>
+          </div>
         </div>
       ))}
     </div>
